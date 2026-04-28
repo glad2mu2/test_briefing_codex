@@ -1,13 +1,15 @@
 # DESIGN.md — Codex/OpenAI Technical Blueprint
 
-This document describes the backend-first implementation for the construction weekly briefing PPT generator.
+This document describes the Codex-assisted implementation for the construction weekly briefing PPT generator.
 
 ## 1. Stack
 
 - Language: Python 3.11+
 - Package management: uv preferred
+- Runtime fallback: project-local Windows `.venv\Scripts\python.exe` when global Python/uv is not on PATH
 - Development agent: Codex, guided by `AGENTS.md`
-- Runtime AI: OpenAI Agents SDK for specialist agent tasks, Responses API for short direct LLM calls
+- Primary runtime: Codex-assisted manifest creation plus local PPTX builder
+- Optional runtime AI: OpenAI Agents SDK for specialist agent tasks, Responses API for short direct LLM calls
 - Model routing: quality-first defaults, configurable through `.env`
 - PDF processing: pdfplumber, pypdf fallback, pdf2image + pytesseract OCR fallback
 - Web collection: httpx, beautifulsoup4, playwright for dynamic CERIK pages
@@ -22,7 +24,8 @@ This document describes the backend-first implementation for the construction we
 
 ```text
 src/
-  main.py                  # CLI entrypoint
+  main.py                  # CLI entrypoint for codex_assisted and api_auto
+  codex_assisted.py        # No-API manifest loader and PPTX build workflow
   orchestrator.py          # Layer 0: step ordering, persistence, failure policy
   state.py                 # Layer 0: JSON run state and transfer logs
   config.py                # Settings, model routing, constants
@@ -48,7 +51,8 @@ src/
     classifier.py
     layout_chooser.py
 
-prompts/                   # Knowledge packets replacing .claude/skills
+examples/                  # Example Codex-assisted manifests
+prompts/                   # Knowledge packets for optional api_auto mode
 data/pdfs/                 # Source PDFs; do not modify/delete existing files
 data/extracted/            # Run state and extracted artifacts
 data/articles/             # Article cache
@@ -57,7 +61,18 @@ templates/                 # PPT templates; do not modify/delete existing files
 tests/                     # Unit and integration tests
 ```
 
-## 3. Runtime Pipeline
+## 3. Primary Codex-Assisted Pipeline
+
+The default workflow is intentionally human-in-the-loop inside Codex:
+
+1. The user asks Codex to create a construction briefing from files in `uploads/`.
+2. Codex reads PDFs and source files in the workspace.
+3. Codex prepares `data/articles/codex_briefing_manifest.json`.
+4. The local CLI validates the manifest and builds PPTX under `data/output/`.
+
+This mode does not require `OPENAI_API_KEY` and does not make local OpenAI API calls.
+
+## 4. Optional API Automation Pipeline
 
 The orchestrator must execute these stages in order and must not continue automatically after a stage failure:
 
@@ -71,7 +86,7 @@ The orchestrator must execute these stages in order and must not continue automa
 
 The orchestrator persists each stage to JSON so failed runs can be inspected and later resumed.
 
-## 4. OpenAI Runtime Mapping
+## 5. OpenAI Runtime Mapping
 
 Layer 2 specialist agents use the OpenAI Agents SDK. The orchestrator constructs each specialist with explicit instructions and sends all necessary file paths, text snippets, URLs, and output expectations. Nested handoffs are disabled; the orchestrator directly runs the needed specialists with `asyncio.gather`.
 
@@ -90,7 +105,7 @@ Default model routing:
 
 All model names can be overridden in `.env`.
 
-## 5. Data And Copyright Policy
+## 6. Data And Copyright Policy
 
 - User PDF originals are never uploaded to OpenAI or any other external service.
 - Extracted user-PDF text chunks may be sent to OpenAI only when `ALLOW_OPENAI_TEXT_UPLOAD=true`.
@@ -99,7 +114,7 @@ All model names can be overridden in `.env`.
 - Slides must include source name and original URL.
 - Final PPTX files must be written only under `data/output/`.
 
-## 6. Commands
+## 7. Commands
 
 Some Windows Codex environments do not have `python`, `py`, or `uv` on PATH. Verify and install Python 3.11+ and uv first:
 
@@ -108,6 +123,14 @@ python --version
 py --version
 uv --version
 ```
+
+This workspace can run through its local venv:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+For durable Windows setup, follow `python_setup_guide.md`: install official Python and enable `Add python.exe to PATH`. Keep Windows and WSL virtual environments separate.
 
 Then run:
 
@@ -118,13 +141,13 @@ uv run ruff check src tests
 uv run mypy src
 ```
 
-CLI target:
+Codex-assisted CLI target:
 
 ```powershell
-uv run python -m src.main --upload-dir .\uploads --output .\data\output\briefing_YYYYMMDD_v1.pptx
+.\.venv\Scripts\python.exe -m src.main --mode codex_assisted --manifest .\data\articles\codex_briefing_manifest.json
 ```
 
-## 7. Test Policy
+## 8. Test Policy
 
 - Keep existing PDF validation and extraction tests.
 - Add unit tests for settings/model routing, privacy gates, state persistence, summary length limits, and required slide metadata.

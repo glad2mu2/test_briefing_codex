@@ -8,7 +8,7 @@ This repository builds a Python 3.11+ backend that analyzes construction-industr
 
 Primary users are construction-company planning or management-support staff who prepare weekly executive briefing decks.
 
-The implementation priority is backend-first CLI execution. Web UI, slide preview, direct editing, and slide ordering remain deferred until the delivery model is decided.
+The implementation priority is Codex-assisted PPT generation. Web UI, slide preview, direct editing, and slide ordering remain deferred until the delivery model is decided.
 
 ## Source Of Truth
 
@@ -23,8 +23,9 @@ Use this order when requirements conflict:
 
 ## Runtime Direction
 
-- Codex is the development agent and reads this file for repository guidance.
-- The application runtime uses OpenAI APIs, preferably OpenAI Agents SDK for specialist agent tasks and Responses API for short direct LLM calls.
+- Codex is the development agent and the primary briefing operator.
+- Primary mode is `codex_assisted`: Codex reads files and prepares a manifest; local code builds PPTX with no API calls.
+- Optional mode is `api_auto`: OpenAI APIs run specialist tasks automatically.
 - Do not add Anthropic or Claude Code runtime dependencies unless the user explicitly reopens provider support.
 - Keep the orchestrator as Python code. It owns step ordering, persistence, metrics, and failure policy.
 - Use specialist OpenAI agents only where isolation or parallelism is valuable: PDF issue extraction, news research, article summarization, and fact checking.
@@ -34,6 +35,7 @@ Use this order when requirements conflict:
 
 - Never hardcode API keys or credentials. Use `.env` or environment variables.
 - Never upload original user PDF files to external services.
+- In `codex_assisted` mode, do not require `OPENAI_API_KEY`.
 - Extracted text chunks from user PDFs may be sent to OpenAI only when `ALLOW_OPENAI_TEXT_UPLOAD=true`.
 - When text is sent to OpenAI, log and persist provider, purpose, source path, page numbers, and character count.
 - Do not copy full news article bodies into generated output. Store only local cache needed for processing; slides must use a summary of 200 Korean characters or fewer plus original URL.
@@ -44,7 +46,7 @@ Use this order when requirements conflict:
 
 ## Setup And Commands
 
-Local PATH on some Windows Codex machines may not include `python`, `py`, or `uv`. Verify first:
+Local PATH on some Windows Codex machines may not include `python`, `py`, `uv`, or `pip`. Verify first:
 
 ```powershell
 python --version
@@ -52,7 +54,16 @@ py --version
 uv --version
 ```
 
-If Python or uv is missing, install Python 3.11+ and uv, then run:
+For this workspace, prefer the project-local Windows virtualenv when available:
+
+```powershell
+.\.venv\Scripts\python.exe --version
+.\.venv\Scripts\python.exe -m pytest -q
+```
+
+If Python is missing for a new Windows project, use the official Python installer and enable `Add python.exe to PATH`. If Microsoft Store opens when typing `python`, disable the Python App Execution Alias in Windows Settings. Use `python_setup_guide.md` as the detailed reference.
+
+When uv is installed and on PATH, run:
 
 ```powershell
 uv sync --extra dev
@@ -61,13 +72,15 @@ uv run ruff check src tests
 uv run mypy src
 ```
 
-CLI target after implementation:
+No-API Codex-assisted CLI target:
 
 ```powershell
-uv run python -m src.main --upload-dir .\uploads --output .\data\output\briefing_YYYYMMDD_v1.pptx
+.\.venv\Scripts\python.exe -m src.main --mode codex_assisted --manifest .\data\articles\codex_briefing_manifest.json
 ```
 
-Set `OPENAI_API_KEY` and `ALLOW_OPENAI_TEXT_UPLOAD=true` before running AI stages against uploaded PDFs.
+If the `.venv` Python reports a uv trampoline permission error, rerun the command with elevated permissions in Codex or recreate the venv from a normal Windows Python install.
+
+Set `OPENAI_API_KEY` and `ALLOW_OPENAI_TEXT_UPLOAD=true` only before running `api_auto` against uploaded PDFs.
 
 ## Code Style
 

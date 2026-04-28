@@ -70,6 +70,9 @@ DEFAULT_STATE_DIR: Final[Path] = Path("data/extracted")
 
 OPENAI_PROVIDER_NAME: Final[str] = "openai"
 
+CODEX_ASSISTED_MODE: Final[str] = "codex_assisted"
+API_AUTO_MODE: Final[str] = "api_auto"
+
 
 @dataclass(frozen=True)
 class ModelRouting:
@@ -87,6 +90,7 @@ class ModelRouting:
 class AppSettings:
     """Runtime settings loaded from environment variables."""
 
+    run_mode: str
     openai_api_key: str | None
     use_openai_agents_sdk: bool
     allow_openai_text_upload: bool
@@ -115,10 +119,11 @@ def load_settings(env: Mapping[str, str] | None = None) -> AppSettings:
         layout=source.get("OPENAI_LAYOUT_MODEL", DEFAULT_LAYOUT_MODEL),
     )
     return AppSettings(
+        run_mode=source.get("BRIEFING_RUN_MODE", CODEX_ASSISTED_MODE),
         openai_api_key=_clean_optional(source.get("OPENAI_API_KEY")),
         use_openai_agents_sdk=_env_bool(
             source.get("USE_OPENAI_AGENTS_SDK"),
-            default=True,
+            default=False,
         ),
         allow_openai_text_upload=_env_bool(
             source.get("ALLOW_OPENAI_TEXT_UPLOAD"),

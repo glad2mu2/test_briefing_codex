@@ -7,8 +7,9 @@ from src.config import load_settings
 
 def test_load_settings_defaults_are_openai_quality_first() -> None:
     settings = load_settings({})
+    assert settings.run_mode == "codex_assisted"
     assert settings.openai_api_key is None
-    assert settings.use_openai_agents_sdk is True
+    assert settings.use_openai_agents_sdk is False
     assert settings.allow_openai_text_upload is False
     assert settings.models.issue_extraction == "gpt-5.5"
     assert settings.models.classification == "gpt-5.4-mini"
@@ -18,6 +19,7 @@ def test_load_settings_env_overrides() -> None:
     settings = load_settings(
         {
             "OPENAI_API_KEY": "sk-test",
+            "BRIEFING_RUN_MODE": "api_auto",
             "USE_OPENAI_AGENTS_SDK": "false",
             "ALLOW_OPENAI_TEXT_UPLOAD": "true",
             "OPENAI_ISSUE_MODEL": "custom-issue",
@@ -25,6 +27,7 @@ def test_load_settings_env_overrides() -> None:
             "STATE_DIR": "custom-state",
         }
     )
+    assert settings.run_mode == "api_auto"
     assert settings.openai_api_key == "sk-test"
     assert settings.use_openai_agents_sdk is False
     assert settings.allow_openai_text_upload is True
