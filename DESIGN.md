@@ -110,7 +110,8 @@ All model names can be overridden in `.env`.
 - User PDF originals are never uploaded to OpenAI or any other external service.
 - Extracted user-PDF text chunks may be sent to OpenAI only when `ALLOW_OPENAI_TEXT_UPLOAD=true`.
 - Every OpenAI text transfer logs provider, purpose, source path, page numbers, and character count in run state.
-- News article output must be summarized to 200 Korean characters or fewer and include original URL.
+- News article output must be summarized to 1,000-2,000 UTF-8 bytes including spaces and include original URL.
+- Article summaries should be detailed enough for executives to understand the article after the meeting without opening every URL.
 - Slides must include source name and original URL.
 - Final PPTX files must be written only under `data/output/`.
 

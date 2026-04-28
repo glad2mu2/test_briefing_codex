@@ -14,7 +14,7 @@ Ask Codex something like:
 
 ```text
 uploads 폴더의 PDF를 읽고 건설업 주간 브리핑 PPT를 만들어줘.
-경영진 보고용으로 10장 이내, 각 슬라이드에는 제목/출처/URL/200자 요약을 넣어줘.
+경영진 보고용으로 각 슬라이드에는 제목/출처/URL/상세 기사 정리/시사점을 넣어줘.
 API 자동 실행 말고 Codex-assisted 방식으로 진행해줘.
 ```
 
@@ -23,7 +23,7 @@ API 자동 실행 말고 Codex-assisted 방식으로 진행해줘.
 1. Inspect `uploads/` and any user-mentioned files.
 2. Extract key construction issues and organize them by topic.
 3. Collect recent related Korean domestic articles for each topic/issue with web tools.
-4. Keep article summaries at 200 Korean characters or fewer.
+4. Write article summaries in enough detail for executives to understand the article after the meeting, while keeping each summary at 1,000-2,000 UTF-8 bytes including spaces.
 5. Include article title, source, original URL, article summary, conclusion/implication, and image URL when available.
 6. Write a manifest JSON under `data/articles/codex_briefing_manifest.json`.
 7. Run:
@@ -91,7 +91,7 @@ Use Naver News as a fallback discovery surface; prefer the original press URL wh
       "article_title": "기사 제목",
       "article_url": "https://www.dnews.co.kr/",
       "article_source": "대한경제",
-      "article_summary": "200자 이내 기사 내용 정리",
+      "article_summary": "공백 포함 1,000~2,000 byte 상세 기사 내용 정리",
       "conclusion": "결론 및 시사점",
       "image_url": null
     }

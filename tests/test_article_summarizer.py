@@ -7,14 +7,14 @@ from typing import Any
 import pytest
 
 from src.agents.article_summarizer import summarize_article
-from src.config import SUMMARY_MAX_CHARS, load_settings
+from src.config import SUMMARY_MAX_BYTES, load_settings
 from src.llm.client import LLMClient
 from src.schemas import Article
 
 
 class FakeResponses:
     async def create(self, **_: Any) -> dict[str, str]:
-        return {"output_text": "{\"summary\": \"" + ("가" * 250) + "\"}"}
+        return {"output_text": "{\"summary\": \"" + ("가" * (SUMMARY_MAX_BYTES + 50)) + "\"}"}
 
 
 class FakeOpenAIClient:
@@ -36,6 +36,6 @@ async def test_summarizer_enforces_summary_length() -> None:
 
     summary = await summarize_article(article, client, settings)
 
-    assert len(summary.summary) == SUMMARY_MAX_CHARS
+    assert len(summary.summary.encode("utf-8")) <= SUMMARY_MAX_BYTES
     assert summary.source == "대한경제"
     assert summary.url == "https://example.com/article"

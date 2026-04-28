@@ -38,7 +38,7 @@ Use this order when requirements conflict:
 - In `codex_assisted` mode, do not require `OPENAI_API_KEY`.
 - Extracted text chunks from user PDFs may be sent to OpenAI only when `ALLOW_OPENAI_TEXT_UPLOAD=true`.
 - When text is sent to OpenAI, log and persist provider, purpose, source path, page numbers, and character count.
-- Do not copy full news article bodies into generated output. Store only local cache needed for processing; slides must use a summary of 200 Korean characters or fewer plus original URL.
+- Do not copy full news article bodies into generated output. Store only local cache needed for processing; slides must use a detailed executive summary of 1,000-2,000 UTF-8 bytes including spaces plus original URL.
 - Every slide must include source name and original URL.
 - The Codex-assisted manifest must also produce an XLSX table with: `PDF Source`, `주제`, `내용 요약`, `기사 제목`, `기사 원본URL`, `기사 출처`, `기사 내용 정리`, `결론 및 시사점`.
 - PPT slides are based on article fields, not raw PDF issue text alone. Include article title, source, article summary, conclusion/implication, and article image when available.

@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from src.composers.pptx_builder import build_briefing_pptx
+from src.config import SUMMARY_MAX_BYTES, SUMMARY_MIN_BYTES
 from src.exporters.xlsx_exporter import export_briefing_xlsx
 from src.schemas import ArticleSummary, BriefingResult, SlidePlan
 
@@ -85,8 +86,11 @@ def _summary_from_payload(payload: dict[object, object], index: int) -> ArticleS
     summary = _required_any(payload, ("article_summary", "기사 내용 정리", "summary"))
     conclusion = _required_any(payload, ("conclusion", "결론 및 시사점"))
     image_url = _optional_string(payload.get("image_url"))
-    if len(summary) > 200:
-        raise ManifestError(f"{article_id} summary exceeds 200 characters")
+    summary_bytes = len(summary.encode("utf-8"))
+    if summary_bytes < SUMMARY_MIN_BYTES:
+        raise ManifestError(f"{article_id} summary is below {SUMMARY_MIN_BYTES} bytes")
+    if summary_bytes > SUMMARY_MAX_BYTES:
+        raise ManifestError(f"{article_id} summary exceeds {SUMMARY_MAX_BYTES} bytes")
     return ArticleSummary(
         article_id=article_id,
         issue_id=issue_id,

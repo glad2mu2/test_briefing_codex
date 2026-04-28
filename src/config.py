@@ -105,8 +105,12 @@ ISSUE_CATEGORIES: Final[tuple[str, ...]] = (
     "market",
 )
 
-# Korean character count, not English word count. See AGENTS.md.
-SUMMARY_MAX_CHARS: Final[int] = 200
+# UTF-8 byte count including spaces. See AGENTS.md.
+SUMMARY_MIN_BYTES: Final[int] = 1000
+SUMMARY_MAX_BYTES: Final[int] = 2000
+
+# Backward-compatible alias for older imports. New code should use byte limits.
+SUMMARY_MAX_CHARS: Final[int] = SUMMARY_MAX_BYTES
 
 # Cache cleanup threshold. See AGENTS.md.
 CACHE_RETENTION_DAYS: Final[int] = 30

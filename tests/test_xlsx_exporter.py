@@ -33,3 +33,4 @@ def test_export_briefing_xlsx_writes_requested_columns(tmp_path: Path) -> None:
     assert worksheet["A2"].value == "PDF Source"
     assert worksheet["D2"].value == "기사 제목"
     assert worksheet["H2"].value == "결론 및 시사점"
+    assert worksheet.row_dimensions[2].height == 120

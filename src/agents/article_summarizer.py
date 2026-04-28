@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from src.agents.openai_agent_runner import run_specialist_json
-from src.config import SUMMARY_MAX_CHARS, AppSettings
+from src.config import SUMMARY_MAX_BYTES, SUMMARY_MIN_BYTES, AppSettings
 from src.llm.client import LLMClient
 from src.schemas import Article, ArticleSummary
 
@@ -13,12 +13,15 @@ async def summarize_article(
     client: LLMClient,
     settings: AppSettings,
 ) -> ArticleSummary:
-    """Summarize one article and enforce the 200 Korean-character limit."""
+    """Summarize one article and enforce the configured Korean-character limit."""
     instructions = (
-        "You summarize Korean construction news for executive PPT slides. "
-        f"Return only JSON: {{\"summary\": string}}. The summary must be "
-        f"{SUMMARY_MAX_CHARS} Korean characters or fewer. Do not copy the "
-        "article body verbatim."
+        "You summarize Korean construction news for executive PPT slides that "
+        "management will read after the meeting. Return only JSON: "
+        "{\"summary\": string}. The summary must be detailed enough to "
+        "understand the article's main facts, causes, figures, stakeholders, "
+        f"and implications. Use {SUMMARY_MIN_BYTES}-{SUMMARY_MAX_BYTES} UTF-8 bytes "
+        "including spaces. "
+        "Do not copy the article body verbatim."
     )
     payload = await run_specialist_json(
         name="article-summarizer",
@@ -42,6 +45,20 @@ async def summarize_article(
         title=article.title,
         source=article.source,
         url=article.url,
-        summary=summary_text[:SUMMARY_MAX_CHARS],
+        summary=_truncate_utf8(summary_text, SUMMARY_MAX_BYTES),
         image_url=article.image_url,
     )
+
+
+def _truncate_utf8(text: str, max_bytes: int) -> str:
+    """Trim text to a UTF-8 byte budget without splitting characters."""
+    encoded = text.encode("utf-8")
+    if len(encoded) <= max_bytes:
+        return text
+    trimmed = encoded[:max_bytes]
+    while trimmed:
+        try:
+            return trimmed.decode("utf-8")
+        except UnicodeDecodeError:
+            trimmed = trimmed[:-1]
+    return ""

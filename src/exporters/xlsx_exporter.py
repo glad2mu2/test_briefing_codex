@@ -52,14 +52,14 @@ def export_briefing_xlsx(rows: tuple[ArticleSummary, ...], output_path: Path) ->
             ]
         )
 
-    header_fill = PatternFill("solid", fgColor="1F4E78")
+    header_fill = PatternFill("solid", fgColor="7F7F7F")
     header_font = Font(color="FFFFFF", bold=True)
     for cell in worksheet[1]:
         cell.fill = header_fill
         cell.font = header_font
         cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
 
-    widths = (28, 24, 44, 38, 42, 20, 48, 48)
+    widths = (32, 24, 48, 42, 48, 20, 78, 56)
     for index, width in enumerate(widths, start=1):
         column = worksheet.cell(row=1, column=index).column_letter
         worksheet.column_dimensions[column].width = width
@@ -67,6 +67,8 @@ def export_briefing_xlsx(rows: tuple[ArticleSummary, ...], output_path: Path) ->
     for row_cells in worksheet.iter_rows(min_row=2):
         for cell in row_cells:
             cell.alignment = Alignment(vertical="top", wrap_text=True)
+    for row_index in range(2, worksheet.max_row + 1):
+        worksheet.row_dimensions[row_index].height = 120
     worksheet.freeze_panes = "A2"
     workbook.save(output_path)
     return output_path
