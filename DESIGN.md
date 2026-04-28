@@ -1,0 +1,132 @@
+# DESIGN.md — Codex/OpenAI Technical Blueprint
+
+This document describes the backend-first implementation for the construction weekly briefing PPT generator.
+
+## 1. Stack
+
+- Language: Python 3.11+
+- Package management: uv preferred
+- Development agent: Codex, guided by `AGENTS.md`
+- Runtime AI: OpenAI Agents SDK for specialist agent tasks, Responses API for short direct LLM calls
+- Model routing: quality-first defaults, configurable through `.env`
+- PDF processing: pdfplumber, pypdf fallback, pdf2image + pytesseract OCR fallback
+- Web collection: httpx, beautifulsoup4, playwright for dynamic CERIK pages
+- PPT generation: python-pptx
+- Visual materials: matplotlib, pandas
+- Korean NLP: kiwipiepy when deterministic tokenization is needed
+- Retry policy: tenacity around network and API calls
+- Tests: pytest, pytest-asyncio, pytest-cov, pytest-httpx, respx
+- Lint/type checks: ruff, mypy
+
+## 2. Directory Plan
+
+```text
+src/
+  main.py                  # CLI entrypoint
+  orchestrator.py          # Layer 0: step ordering, persistence, failure policy
+  state.py                 # Layer 0: JSON run state and transfer logs
+  config.py                # Settings, model routing, constants
+  schemas.py               # Shared dataclass I/O contracts
+  collectors/
+    pdf_collector.py       # Layer 1: upload validation, KFCC/CERIK collection
+  extractors/
+    pdf_text.py            # Layer 1: local PDF text extraction
+    article_media.py       # Layer 1: deterministic HTML media/table extraction
+  dedup/
+    cosine_dedup.py        # Layer 1: deterministic issue dedup
+  composers/
+    pptx_builder.py        # Layer 1: PPTX assembly
+  agents/
+    openai_agent_runner.py # Layer 2: OpenAI Agents SDK adapter
+    pdf_issue_extractor.py
+    news_researcher.py
+    article_summarizer.py
+    fact_checker.py
+  llm/
+    client.py              # Layer 3: Responses API wrapper
+    prompts.py             # Prompt/knowledge packet loader
+    classifier.py
+    layout_chooser.py
+
+prompts/                   # Knowledge packets replacing .claude/skills
+data/pdfs/                 # Source PDFs; do not modify/delete existing files
+data/extracted/            # Run state and extracted artifacts
+data/articles/             # Article cache
+data/output/               # Final PPTX output only
+templates/                 # PPT templates; do not modify/delete existing files
+tests/                     # Unit and integration tests
+```
+
+## 3. Runtime Pipeline
+
+The orchestrator must execute these stages in order and must not continue automatically after a stage failure:
+
+1. PDF collection and upload validation.
+2. Local PDF text extraction.
+3. OpenAI specialist agent issue extraction, parallelized per PDF.
+4. Direct LLM classification plus deterministic deduplication.
+5. OpenAI specialist agent news research, parallelized per issue.
+6. Article summarization, fact checking, and deterministic media extraction.
+7. Layout choice, PPTX assembly, final metadata validation, and save to `data/output/`.
+
+The orchestrator persists each stage to JSON so failed runs can be inspected and later resumed.
+
+## 4. OpenAI Runtime Mapping
+
+Layer 2 specialist agents use the OpenAI Agents SDK. The orchestrator constructs each specialist with explicit instructions and sends all necessary file paths, text snippets, URLs, and output expectations. Nested handoffs are disabled; the orchestrator directly runs the needed specialists with `asyncio.gather`.
+
+Layer 3 direct LLM calls use the shared `src/llm/client.py` wrapper. These calls are reserved for short classification and layout decisions where a separate specialist agent is unnecessary.
+
+Default model routing:
+
+| Stage | Default model | Reason |
+|---|---|---|
+| Issue extraction | `gpt-5.5` | Highest reasoning quality |
+| News research | `gpt-5.4` | Strong search and synthesis |
+| Summarization | `gpt-5.4-mini` | Lower-cost short output |
+| Fact checking | `gpt-5.5` | Accuracy critical |
+| Classification | `gpt-5.4-mini` | Short constrained labels |
+| Layout choice | `gpt-5.5` | High-quality slide planning |
+
+All model names can be overridden in `.env`.
+
+## 5. Data And Copyright Policy
+
+- User PDF originals are never uploaded to OpenAI or any other external service.
+- Extracted user-PDF text chunks may be sent to OpenAI only when `ALLOW_OPENAI_TEXT_UPLOAD=true`.
+- Every OpenAI text transfer logs provider, purpose, source path, page numbers, and character count in run state.
+- News article output must be summarized to 200 Korean characters or fewer and include original URL.
+- Slides must include source name and original URL.
+- Final PPTX files must be written only under `data/output/`.
+
+## 6. Commands
+
+Some Windows Codex environments do not have `python`, `py`, or `uv` on PATH. Verify and install Python 3.11+ and uv first:
+
+```powershell
+python --version
+py --version
+uv --version
+```
+
+Then run:
+
+```powershell
+uv sync --extra dev
+uv run pytest -q
+uv run ruff check src tests
+uv run mypy src
+```
+
+CLI target:
+
+```powershell
+uv run python -m src.main --upload-dir .\uploads --output .\data\output\briefing_YYYYMMDD_v1.pptx
+```
+
+## 7. Test Policy
+
+- Keep existing PDF validation and extraction tests.
+- Add unit tests for settings/model routing, privacy gates, state persistence, summary length limits, and required slide metadata.
+- Mock OpenAI and web calls in automated tests.
+- Add orchestrator tests for stage ordering and "do not continue after failure" behavior.

@@ -1,0 +1,95 @@
+# AGENTS.md
+
+Codex project guidance for the construction weekly briefing generator.
+
+## Project Identity
+
+This repository builds a Python 3.11+ backend that analyzes construction-industry PDFs and related news, then generates a weekly briefing `.pptx`.
+
+Primary users are construction-company planning or management-support staff who prepare weekly executive briefing decks.
+
+The implementation priority is backend-first CLI execution. Web UI, slide preview, direct editing, and slide ordering remain deferred until the delivery model is decided.
+
+## Source Of Truth
+
+Use this order when requirements conflict:
+
+1. `건설업 주간 브리핑 PPT 자동 생성 솔루션_기능명세서_2026-04-27.md`
+2. `DESIGN.md`
+3. `ROADMAP.md`
+4. Source code and tests
+
+`CLAUDE.md` is legacy context only. Do not add new Claude-specific runtime design there.
+
+## Runtime Direction
+
+- Codex is the development agent and reads this file for repository guidance.
+- The application runtime uses OpenAI APIs, preferably OpenAI Agents SDK for specialist agent tasks and Responses API for short direct LLM calls.
+- Do not add Anthropic or Claude Code runtime dependencies unless the user explicitly reopens provider support.
+- Keep the orchestrator as Python code. It owns step ordering, persistence, metrics, and failure policy.
+- Use specialist OpenAI agents only where isolation or parallelism is valuable: PDF issue extraction, news research, article summarization, and fact checking.
+- Do not use nested handoffs for this project. The orchestrator runs specialist agents directly and may call them in parallel with `asyncio.gather`.
+
+## Security, Copyright, And Data Rules
+
+- Never hardcode API keys or credentials. Use `.env` or environment variables.
+- Never upload original user PDF files to external services.
+- Extracted text chunks from user PDFs may be sent to OpenAI only when `ALLOW_OPENAI_TEXT_UPLOAD=true`.
+- When text is sent to OpenAI, log and persist provider, purpose, source path, page numbers, and character count.
+- Do not copy full news article bodies into generated output. Store only local cache needed for processing; slides must use a summary of 200 Korean characters or fewer plus original URL.
+- Every slide must include source name and original URL.
+- Do not insert article images unless source and usage are traceable. Prefer thumbnails with attribution or generated charts.
+- Generated PPT files must be written under `data/output/`.
+- Do not modify or delete files under `templates/` or `data/pdfs/`; adding new files is allowed when needed.
+
+## Setup And Commands
+
+Local PATH on some Windows Codex machines may not include `python`, `py`, or `uv`. Verify first:
+
+```powershell
+python --version
+py --version
+uv --version
+```
+
+If Python or uv is missing, install Python 3.11+ and uv, then run:
+
+```powershell
+uv sync --extra dev
+uv run pytest -q
+uv run ruff check src tests
+uv run mypy src
+```
+
+CLI target after implementation:
+
+```powershell
+uv run python -m src.main --upload-dir .\uploads --output .\data\output\briefing_YYYYMMDD_v1.pptx
+```
+
+Set `OPENAI_API_KEY` and `ALLOW_OPENAI_TEXT_UPLOAD=true` before running AI stages against uploaded PDFs.
+
+## Code Style
+
+- Python modules use `snake_case.py`.
+- All public functions need type hints.
+- Prefer dataclasses or typed structures for pipeline state and I/O.
+- Use Google-style docstrings for non-trivial public functions.
+- Use `logging`, not `print()`, including CLI status output.
+- Use `async/await` for I/O-bound collection and LLM calls.
+- Mock all external API and network calls in tests.
+- Keep changes narrowly scoped and preserve existing Layer 1 behavior unless the task requires otherwise.
+
+## Pipeline Contract
+
+The weekly briefing pipeline must preserve this order:
+
+1. Collect PDFs and validate uploads.
+2. Extract text locally.
+3. Extract construction issues with OpenAI specialist agents.
+4. Classify issues and deduplicate.
+5. Research trusted news sources.
+6. Summarize, fact-check, and extract or generate visuals.
+7. Choose slide layouts, build PPTX, validate metadata, and save output.
+
+If a stage fails, do not automatically continue. Persist the failure and return a clear error so the user can decide how to proceed.

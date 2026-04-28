@@ -1,0 +1,50 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+.venv/
+venv/
+
+# Build
+build/
+dist/
+*.egg
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Environment
+.env
+.env.local
+
+# Data — see CLAUDE.md §3 (사용자 PDF / 생성물 외부 전송 금지)
+data/pdfs/*
+data/extracted/*
+data/articles/*
+data/output/*
+!data/**/.gitkeep
+
+# Uploads (user-provided PDFs, never commit)
+uploads/
+
+# Logs
+*.log
+logs/
+
+# OS
+Thumbs.db
