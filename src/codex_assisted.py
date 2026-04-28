@@ -8,6 +8,7 @@ from pathlib import Path
 from typing import Any, cast
 
 from src.composers.pptx_builder import build_briefing_pptx
+from src.exporters.xlsx_exporter import export_briefing_xlsx
 from src.schemas import ArticleSummary, BriefingResult, SlidePlan
 
 
@@ -59,23 +60,30 @@ def load_manifest(path: Path) -> CodexBriefingManifest:
 
 
 def build_from_manifest(manifest_path: Path, output_path: Path, *, run_id: str) -> BriefingResult:
-    """Build a PPTX directly from a Codex-prepared manifest."""
+    """Build XLSX and PPTX artifacts directly from a Codex-prepared manifest."""
     manifest = load_manifest(manifest_path)
+    xlsx_path = output_path.with_suffix(".xlsx")
+    export_briefing_xlsx(manifest.summaries, xlsx_path)
     build_briefing_pptx(manifest.summaries, manifest.slide_plans, output_path)
     return BriefingResult(
         output_path=str(output_path),
         run_id=run_id,
         slide_count=len(manifest.summaries),
+        xlsx_path=str(xlsx_path),
     )
 
 
 def _summary_from_payload(payload: dict[object, object], index: int) -> ArticleSummary:
     article_id = _string_value(payload.get("article_id"), default=f"article-{index}")
     issue_id = _string_value(payload.get("issue_id"), default=f"issue-{index}")
-    title = _required_string(payload, "title")
-    source = _required_string(payload, "source")
-    url = _required_string(payload, "url")
-    summary = _required_string(payload, "summary")
+    pdf_source = _required_any(payload, ("pdf_source", "PDF Source"))
+    topic = _required_any(payload, ("topic", "주제"))
+    pdf_summary = _required_any(payload, ("pdf_summary", "내용 요약"))
+    title = _required_any(payload, ("article_title", "기사 제목", "title"))
+    url = _required_any(payload, ("article_url", "기사 원본URL", "url"))
+    source = _required_any(payload, ("article_source", "기사 출처", "source"))
+    summary = _required_any(payload, ("article_summary", "기사 내용 정리", "summary"))
+    conclusion = _required_any(payload, ("conclusion", "결론 및 시사점"))
     image_url = _optional_string(payload.get("image_url"))
     if len(summary) > 200:
         raise ManifestError(f"{article_id} summary exceeds 200 characters")
@@ -86,15 +94,20 @@ def _summary_from_payload(payload: dict[object, object], index: int) -> ArticleS
         source=source,
         url=url,
         summary=summary,
+        pdf_source=pdf_source,
+        topic=topic,
+        pdf_summary=pdf_summary,
+        conclusion=conclusion,
         image_url=image_url,
     )
 
 
-def _required_string(payload: dict[object, object], key: str) -> str:
-    value = payload.get(key)
-    if not isinstance(value, str) or not value.strip():
-        raise ManifestError(f"article field is required: {key}")
-    return value.strip()
+def _required_any(payload: dict[object, object], keys: tuple[str, ...]) -> str:
+    for key in keys:
+        value = payload.get(key)
+        if isinstance(value, str) and value.strip():
+            return value.strip()
+    raise ManifestError(f"article field is required: {' / '.join(keys)}")
 
 
 def _optional_string(value: object) -> str | None:

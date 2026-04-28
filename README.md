@@ -58,15 +58,17 @@ uv run mypy src
 
 ## Run
 
-For the no-API Codex-assisted workflow, ask Codex to create a manifest from your PDFs, then run:
+For the no-API Codex-assisted workflow, ask Codex to create a manifest from your PDFs and related recent domestic articles, then run:
 
 ```powershell
 .\.venv\Scripts\python.exe -m src.main --mode codex_assisted --manifest .\data\articles\codex_briefing_manifest.json
 ```
 
-The generated PPTX is written under `data/output/`. Pipeline run state and transfer audit logs are written under `data/extracted/{run_id}/state.json`.
+The generated XLSX and PPTX are written under `data/output/`. Pipeline run state and transfer audit logs are written under `data/extracted/{run_id}/state.json`.
 
 See `CODEX_WORKFLOW.md` for the exact Codex request pattern and manifest format.
+
+Related article collection uses domestic sources only, in this order: 대한경제, 한국경제 RSS, 서울경제 RSS, then fallback to 연합뉴스 RSS, 국토일보 RSS, and 네이버 뉴스.
 
 ## Windows Python Notes
 

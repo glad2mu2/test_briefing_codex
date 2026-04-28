@@ -12,6 +12,7 @@ dependencies = [
     "pdf2image>=1.17",
     "pytesseract>=0.3.13",
     "python-pptx>=1.0",
+    "openpyxl>=3.1",
     "matplotlib>=3.9",
     "pandas>=2.2",
     "kiwipiepy>=0.21",

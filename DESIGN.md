@@ -12,7 +12,7 @@ This document describes the Codex-assisted implementation for the construction w
 - Optional runtime AI: OpenAI Agents SDK for specialist agent tasks, Responses API for short direct LLM calls
 - Model routing: quality-first defaults, configurable through `.env`
 - PDF processing: pdfplumber, pypdf fallback, pdf2image + pytesseract OCR fallback
-- Web collection: httpx, beautifulsoup4, playwright for dynamic CERIK pages
+- Web collection: httpx, beautifulsoup4, RSS feeds, and playwright for dynamic pages
 - PPT generation: python-pptx
 - Visual materials: matplotlib, pandas
 - Korean NLP: kiwipiepy when deterministic tokenization is needed
@@ -67,8 +67,8 @@ The default workflow is intentionally human-in-the-loop inside Codex:
 
 1. The user asks Codex to create a construction briefing from files in `uploads/`.
 2. Codex reads PDFs and source files in the workspace.
-3. Codex prepares `data/articles/codex_briefing_manifest.json`.
-4. The local CLI validates the manifest and builds PPTX under `data/output/`.
+3. Codex collects related recent domestic articles and prepares `data/articles/codex_briefing_manifest.json`.
+4. The local CLI validates the manifest and builds XLSX plus PPTX under `data/output/`.
 
 This mode does not require `OPENAI_API_KEY` and does not make local OpenAI API calls.
 
@@ -146,6 +146,10 @@ Codex-assisted CLI target:
 ```powershell
 .\.venv\Scripts\python.exe -m src.main --mode codex_assisted --manifest .\data\articles\codex_briefing_manifest.json
 ```
+
+The XLSX table uses these exact columns: `PDF Source`, `주제`, `내용 요약`, `기사 제목`, `기사 원본URL`, `기사 출처`, `기사 내용 정리`, `결론 및 시사점`.
+
+Related news collection is domestic-only and follows this source priority: 대한경제, 한국경제 부동산 RSS, 한국경제 경제 RSS, 서울경제 부동산 RSS, 서울경제 경제 RSS, 연합뉴스 최신기사 RSS, 국토일보 RSS, 네이버 뉴스. The fallback sources are used only when higher-priority sources do not contain a relevant article.
 
 ## 8. Test Policy
 

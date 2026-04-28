@@ -39,8 +39,9 @@ def main() -> int:
             )
         )
     logging.info(
-        "briefing generated: output=%s run_id=%s slides=%d",
+        "briefing generated: output=%s xlsx=%s run_id=%s slides=%d",
         result.output_path,
+        result.xlsx_path,
         result.run_id,
         result.slide_count,
     )

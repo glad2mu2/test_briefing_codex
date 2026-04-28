@@ -4,10 +4,14 @@
     {
       "article_id": "article-1",
       "issue_id": "issue-1",
-      "title": "공공 공사비 현실화 논의 확대",
-      "source": "사용자 제공 PDF",
-      "url": "file://uploads/sample.pdf",
-      "summary": "공사비 상승과 원가 부담이 주요 이슈로 제기됐다. 발주·입찰 조건과 물가 반영 방식 개선 필요성이 커지고 있다.",
+      "pdf_source": "사용자 제공 PDF",
+      "topic": "공사비·원가",
+      "pdf_summary": "PDF에서 공사비 상승, 원가 부담, 발주 조건 개선 필요성이 주요 이슈로 확인됐다.",
+      "article_title": "건설업계 공사비 부담 관련 기사 예시",
+      "article_url": "https://www.dnews.co.kr/",
+      "article_source": "대한경제",
+      "article_summary": "공사비 상승과 원가 부담이 주요 이슈로 제기됐다. 발주·입찰 조건과 물가 반영 방식 개선 필요성이 커지고 있다.",
+      "conclusion": "공공·민간 발주 모두 물가 반영 기준과 계약 리스크 관리 체계를 재점검해야 한다.",
       "image_url": null
     }
   ]

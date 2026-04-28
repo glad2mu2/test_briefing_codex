@@ -2,7 +2,11 @@
 
 from __future__ import annotations
 
-from src.config import load_settings
+from src.config import (
+    DOMESTIC_NEWS_SOURCE_PRIORITY,
+    format_domestic_news_source_priority,
+    load_settings,
+)
 
 
 def test_load_settings_defaults_are_openai_quality_first() -> None:
@@ -34,3 +38,28 @@ def test_load_settings_env_overrides() -> None:
     assert settings.models.issue_extraction == "custom-issue"
     assert settings.output_dir.as_posix() == "custom-output"
     assert settings.state_dir.as_posix() == "custom-state"
+
+
+def test_domestic_news_source_priority_matches_required_order() -> None:
+    names = tuple(source["name"] for source in DOMESTIC_NEWS_SOURCE_PRIORITY)
+
+    assert names == (
+        "대한경제",
+        "한국경제 부동산 RSS",
+        "한국경제 경제 RSS",
+        "서울경제 부동산 RSS",
+        "서울경제 경제 RSS",
+        "연합뉴스 최신기사 RSS",
+        "국토일보 RSS",
+        "네이버 뉴스",
+    )
+    assert DOMESTIC_NEWS_SOURCE_PRIORITY[0]["url"] == "https://www.dnews.co.kr/"
+    assert DOMESTIC_NEWS_SOURCE_PRIORITY[-1]["url"] == "https://news.naver.com/"
+
+
+def test_format_domestic_news_source_priority_includes_rss_urls() -> None:
+    formatted = format_domestic_news_source_priority()
+
+    assert "https://www.hankyung.com/feed/realestate" in formatted
+    assert "https://www.sedaily.com/rss/economy" in formatted
+    assert "https://www.yna.co.kr/rss/news.xml" in formatted

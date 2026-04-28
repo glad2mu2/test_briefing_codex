@@ -6,9 +6,10 @@ Source of truth: AGENTS.md and DESIGN.md.
 from __future__ import annotations
 
 import os
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Final, Mapping
+from typing import Final
 
 # Trusted source whitelist for news search. See AGENTS.md.
 SOURCE_WHITELIST_TIER_1: Final[tuple[dict[str, str], ...]] = (
@@ -29,6 +30,68 @@ SOURCE_WHITELIST_TIER_3: Final[tuple[str, ...]] = (
     "매일경제",
     "서울경제",
     "조선비즈",
+)
+
+# Domestic news collection priority for related articles.
+# Codex-assisted runs and api_auto news research must follow this order.
+DOMESTIC_NEWS_SOURCE_PRIORITY: Final[tuple[dict[str, str], ...]] = (
+    {
+        "tier": "1",
+        "name": "대한경제",
+        "url": "https://www.dnews.co.kr/",
+        "type": "site",
+    },
+    {
+        "tier": "2",
+        "name": "한국경제 부동산 RSS",
+        "url": "https://www.hankyung.com/feed/realestate",
+        "type": "rss",
+    },
+    {
+        "tier": "2",
+        "name": "한국경제 경제 RSS",
+        "url": "https://www.hankyung.com/feed/economy",
+        "type": "rss",
+    },
+    {
+        "tier": "3",
+        "name": "서울경제 부동산 RSS",
+        "url": "https://www.sedaily.com/rss/realestate",
+        "type": "rss",
+    },
+    {
+        "tier": "3",
+        "name": "서울경제 경제 RSS",
+        "url": "https://www.sedaily.com/rss/economy",
+        "type": "rss",
+    },
+    {
+        "tier": "4",
+        "name": "연합뉴스 최신기사 RSS",
+        "url": "https://www.yna.co.kr/rss/news.xml",
+        "type": "fallback_rss",
+    },
+    {
+        "tier": "4",
+        "name": "국토일보 RSS",
+        "url": "http://www.ikld.kr/rss/allArticle.xml",
+        "type": "fallback_rss",
+    },
+    {
+        "tier": "4",
+        "name": "네이버 뉴스",
+        "url": "https://news.naver.com/",
+        "type": "fallback_site",
+    },
+)
+
+DOMESTIC_NEWS_DOMAINS: Final[tuple[str, ...]] = (
+    "dnews.co.kr",
+    "hankyung.com",
+    "sedaily.com",
+    "yna.co.kr",
+    "ikld.kr",
+    "news.naver.com",
 )
 
 # Issue classification categories. See AGENTS.md.
@@ -72,6 +135,14 @@ OPENAI_PROVIDER_NAME: Final[str] = "openai"
 
 CODEX_ASSISTED_MODE: Final[str] = "codex_assisted"
 API_AUTO_MODE: Final[str] = "api_auto"
+
+
+def format_domestic_news_source_priority() -> str:
+    """Return the domestic news source priority as a prompt-ready string."""
+    return "\n".join(
+        f"{source['tier']}. {source['name']} ({source['type']}): {source['url']}"
+        for source in DOMESTIC_NEWS_SOURCE_PRIORITY
+    )
 
 
 @dataclass(frozen=True)

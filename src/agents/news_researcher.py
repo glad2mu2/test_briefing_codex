@@ -3,7 +3,11 @@
 from __future__ import annotations
 
 from src.agents.openai_agent_runner import run_specialist_json
-from src.config import AppSettings, SOURCE_WHITELIST_TIER_1, SOURCE_WHITELIST_TIER_2
+from src.config import (
+    DOMESTIC_NEWS_DOMAINS,
+    AppSettings,
+    format_domestic_news_source_priority,
+)
 from src.llm.client import LLMClient
 from src.schemas import Article, Issue
 
@@ -14,13 +18,16 @@ async def research_news_for_issue(
     settings: AppSettings,
 ) -> tuple[Article, ...]:
     """Find trusted articles for one issue using an OpenAI specialist prompt."""
-    trusted_sources = ", ".join(
-        item["name"] for item in SOURCE_WHITELIST_TIER_1 + SOURCE_WHITELIST_TIER_2
-    )
+    source_priority = format_domestic_news_source_priority()
+    allowed_domains = ", ".join(DOMESTIC_NEWS_DOMAINS)
     instructions = (
-        "You research recent Korean construction-industry news for a briefing. "
-        "Prefer trusted sources in this order: "
-        f"{trusted_sources}. Return only JSON: "
+        "You research recent Korean domestic construction-industry news for a briefing. "
+        "Use only Korean domestic news sources. Follow this source priority exactly, "
+        "moving to a lower tier only when no relevant article exists in higher tiers:\n"
+        f"{source_priority}\n"
+        f"Allowed domains: {allowed_domains}. "
+        "Use Naver News only as a fallback discovery source; when possible return the "
+        "original press URL instead of a Naver aggregator URL. Return only JSON: "
         "{\"articles\": [{\"id\": string, \"title\": string, \"source\": string, "
         "\"url\": string, \"published_at\": string, \"body\": string, "
         "\"image_url\": string|null}]}. Do not invent URLs."

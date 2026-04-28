@@ -42,6 +42,10 @@ class ArticleSummary:
     source: str
     url: str
     summary: str
+    pdf_source: str = ""
+    topic: str = ""
+    pdf_summary: str = ""
+    conclusion: str = ""
     image_url: str | None = None
 
 
@@ -71,3 +75,4 @@ class BriefingResult:
     output_path: str
     run_id: str
     slide_count: int
+    xlsx_path: str | None = None

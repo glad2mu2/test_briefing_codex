@@ -40,6 +40,9 @@ Use this order when requirements conflict:
 - When text is sent to OpenAI, log and persist provider, purpose, source path, page numbers, and character count.
 - Do not copy full news article bodies into generated output. Store only local cache needed for processing; slides must use a summary of 200 Korean characters or fewer plus original URL.
 - Every slide must include source name and original URL.
+- The Codex-assisted manifest must also produce an XLSX table with: `PDF Source`, `주제`, `내용 요약`, `기사 제목`, `기사 원본URL`, `기사 출처`, `기사 내용 정리`, `결론 및 시사점`.
+- PPT slides are based on article fields, not raw PDF issue text alone. Include article title, source, article summary, conclusion/implication, and article image when available.
+- Related article collection must use Korean domestic articles only. Search in this order: 대한경제, 한국경제 부동산 RSS, 한국경제 경제 RSS, 서울경제 부동산 RSS, 서울경제 경제 RSS, then fallback to 연합뉴스 최신기사 RSS, 국토일보 RSS, and 네이버 뉴스.
 - Do not insert article images unless source and usage are traceable. Prefer thumbnails with attribution or generated charts.
 - Generated PPT files must be written under `data/output/`.
 - Do not modify or delete files under `templates/` or `data/pdfs/`; adding new files is allowed when needed.
@@ -101,7 +104,7 @@ The weekly briefing pipeline must preserve this order:
 2. Extract text locally.
 3. Extract construction issues with OpenAI specialist agents.
 4. Classify issues and deduplicate.
-5. Research trusted news sources.
+5. Research trusted domestic news sources in the configured priority order.
 6. Summarize, fact-check, and extract or generate visuals.
 7. Choose slide layouts, build PPTX, validate metadata, and save output.
 
